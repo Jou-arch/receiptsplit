@@ -26,7 +26,7 @@ Built for **Indonesia Web3 Hackathon 2026** · Consumer Apps Track · Team **Tov
 5. 🔗 **Settle**: every payment is an on-chain transfer, verifiable on BscScan
 
 ```mermaid
-flowchart LR
+flowchart TD
 A[Upload Receipt] --> B[AI Parses Receipt]
 B --> C[Split Items per Person]
 C --> D[User Pays Their Share]
