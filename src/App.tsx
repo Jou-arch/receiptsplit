@@ -35,6 +35,7 @@ import { SmartWalletModal } from "./components/SmartWalletModal";
 import { BillHistoryModal } from "./components/BillHistoryModal";
 import { generateTelegramShareMessage } from "./utils/formatters";
 import { useAuth } from "./firebase/authContext";
+import { useLanguage } from "./i18n/LanguageContext";
 import {
   saveReceiptToFirestore,
   updateReceiptSettlementInFirestore,
@@ -44,6 +45,7 @@ import {
 
 export default function App() {
   const { currentUser, signInWithGoogle } = useAuth();
+  const { t, language } = useLanguage();
 
   const [bill, setBill] = useState<Bill | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -70,7 +72,7 @@ export default function App() {
 
   // User Smart Wallet state
   const [smartWallet, setSmartWallet] = useState<SmartWalletInfo>({
-    address: "0x98A192B4eBc78C2187a55D859B7322E7eBf0F5B9",
+    address: "0x33de6Adf9Ce0f4Ae96fB03e1AB6D16577c89A47F",
     type: "ERC-4337 Smart Account",
     bnbBalance: 0.0, // Zero BNB to showcase zero friction!
     usdtBalance: 125.5,
@@ -180,7 +182,9 @@ export default function App() {
     const participantNames: string[] =
       parsedData.participants && parsedData.participants.length > 0
         ? parsedData.participants
-        : ["Budi", "Siti", "Rian", "Host"];
+        : language === "id"
+        ? ["Budi", "Siti", "Rian", "Host"]
+        : ["Alice", "Bob", "Charlie", "Host"];
 
     // Recalculate participant shares
     const map: Record<string, number> = {};
@@ -216,15 +220,15 @@ export default function App() {
           idx === 0
             ? "0x82f5b8a1c97f123d4567e9b1123456789abcdef0123456789abcdef012345678"
             : undefined,
-        badge: idx === 0 ? "Receipt Host" : undefined,
+        badge: idx === 0 ? (language === "id" ? "Receipt Host" : "Bill Host") : undefined,
       };
     });
 
     const newBillId = `bill-${Date.now()}`;
     const newBill: Bill = {
       id: newBillId,
-      title: parsedData.title || parsedData.merchantName || "Struk Nongkrong",
-      merchantName: parsedData.merchantName || "Restoran / Kafe",
+      title: parsedData.title || parsedData.merchantName || (language === "id" ? "Struk Nongkrong" : "Hangout Dining"),
+      merchantName: parsedData.merchantName || (language === "id" ? "Restoran / Kafe" : "Restaurant & Cafe"),
       date: parsedData.date || new Date().toISOString().split("T")[0],
       currency: parsedData.currency || "IDR",
       exchangeRate,
@@ -234,9 +238,9 @@ export default function App() {
       serviceCharge,
       discount,
       grandTotal,
-      payerName: currentUser?.displayName || "Taufik (Host)",
+      payerName: currentUser?.displayName || (language === "id" ? "Taufik (Host)" : "Host"),
       payerAddress: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-      network: "BNB Chain (BSC)",
+      network: "BNB Testnet",
       participants: calculatedParticipants,
       createdAt: new Date().toISOString(),
     };
@@ -248,7 +252,7 @@ export default function App() {
       try {
         setIsSavingBill(true);
         await saveReceiptToFirestore(newBill, currentUser.uid);
-        showToast(`Struk "${newBill.merchantName}" berhasil disimpan ke Cloud Firestore!`);
+        showToast(t.toastReceiptSaved.replace("{name}", newBill.merchantName));
       } catch (err) {
         console.error("Failed to auto-save bill:", err);
       } finally {
@@ -336,7 +340,7 @@ export default function App() {
       try {
         setIsSavingBill(true);
         await saveReceiptToFirestore(updatedBill, currentUser.uid);
-        showToast("Perubahan pembagian item disimpan ke Cloud Firestore.");
+        showToast(t.toastItemChangesSaved);
       } catch (err) {
         console.error("Firestore sync error:", err);
       } finally {
@@ -381,7 +385,7 @@ export default function App() {
     if (currentUser) {
       try {
         await updateReceiptSettlementInFirestore(bill.id, updatedParticipants);
-        showToast("Status lunas & bukti transaksi tercatat di Cloud Firestore!");
+        showToast(t.toastSettlementSuccess);
       } catch (err) {
         console.error("Error updating settlement in Firestore:", err);
       }
@@ -395,7 +399,6 @@ export default function App() {
     if (!currentUser) {
       try {
         await signInWithGoogle();
-        // Effect will handle or user can click save again
       } catch (err) {
         console.error("Sign in failed:", err);
         return;
@@ -406,10 +409,10 @@ export default function App() {
       try {
         setIsSavingBill(true);
         await saveReceiptToFirestore(bill, currentUser.uid);
-        showToast(`Struk "${bill.merchantName}" berhasil disimpan ke Cloud Firestore!`);
+        showToast(t.toastReceiptSaved.replace("{name}", bill.merchantName));
       } catch (err) {
         console.error("Error saving bill to Firestore:", err);
-        showToast("Gagal menyimpan ke Firestore. Silakan coba lagi.");
+        showToast(t.toastSaveError);
       } finally {
         setIsSavingBill(false);
       }
@@ -420,7 +423,7 @@ export default function App() {
   const handleDeleteBill = async (billId: string) => {
     try {
       await deleteReceiptFromFirestore(billId);
-      showToast("Struk berhasil dihapus dari Cloud Firestore.");
+      showToast(t.toastDeletedSuccess);
       if (bill?.id === billId) {
         const remaining = savedBills.filter((b) => b.id !== billId);
         if (remaining.length > 0) {
@@ -431,7 +434,7 @@ export default function App() {
       }
     } catch (err) {
       console.error("Failed to delete bill:", err);
-      showToast("Gagal menghapus struk dari Firestore.");
+      showToast(t.toastDeleteError);
     }
   };
 
@@ -452,9 +455,9 @@ export default function App() {
   // Copy Telegram chat format
   const handleCopyTelegram = () => {
     if (!bill) return;
-    const text = generateTelegramShareMessage(bill);
+    const text = generateTelegramShareMessage(bill, language);
     navigator.clipboard.writeText(text);
-    showToast("Format ringkasan tagihan untuk chat grup Telegram / WhatsApp berhasil disalin!");
+    showToast(t.toastTelegramCopied);
   };
 
   // Check if current bill is already saved in user's Firestore list
@@ -472,7 +475,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Navbar with Firebase Google Sign-In & Riwayat Struk */}
+      {/* Navbar with Language Toggle, Firebase Google Sign-In & Riwayat Struk */}
       <Navbar
         smartWallet={smartWallet}
         isTelegramView={isTelegramView}
@@ -516,22 +519,19 @@ export default function App() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400 border border-amber-500/20">
                     <Zap className="h-3.5 w-3.5 fill-amber-400" />
-                    <span>Solusi Patungan Nongkrong Bebas Ribet</span>
+                    <span>{t.heroBadge1}</span>
                   </div>
                   <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
                     <CloudCheck className="h-3 w-3" />
-                    <span>Firebase Backend & Firestore</span>
+                    <span>{t.heroBadge2}</span>
                   </div>
                 </div>
 
                 <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                  Snap Struk, AI Bagi Item, Teman Bayar USDT Tanpa Gas Fee.
+                  {t.heroTitle}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Satu orang talangi kasir/QRIS restoran, AI (Gemini) memecah siapa pesan apa dari
-                  struk & chat grup, lalu tersimpan aman di <strong>Cloud Firestore</strong> dengan
-                  settlement <strong>Account Abstraction di BNB Chain</strong> (0 BNB saldo
-                  dibutuhkan).
+                  {t.heroDescription}
                 </p>
               </div>
 
@@ -543,27 +543,27 @@ export default function App() {
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-950 shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-yellow-400 active:scale-95 transition"
                 >
                   <Camera className="h-4 w-4" />
-                  <span>Foto Struk Baru (AI)</span>
+                  <span>{t.snapNewReceiptAI}</span>
                 </button>
 
                 <button
                   id="btn-hero-history"
                   onClick={() => setIsHistoryModalOpen(true)}
                   className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-750 transition"
-                  title="Lihat riwayat struk tersimpan di Cloud Firestore"
+                  title={t.historyBtnTitle}
                 >
                   <History className="h-4 w-4 text-amber-400" />
-                  <span>Riwayat ({savedBills.length})</span>
+                  <span>{t.historyBtn} ({savedBills.length})</span>
                 </button>
 
                 <button
                   id="btn-hero-share"
                   onClick={handleCopyTelegram}
                   className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-750 transition"
-                  title="Bagikan rincian tagihan ke grup WhatsApp atau Telegram"
+                  title={t.copyGroupChatSummary}
                 >
                   <Share2 className="h-4 w-4 text-amber-400" />
-                  <span className="hidden sm:inline">Bagikan ke Grup</span>
+                  <span className="hidden sm:inline">{t.shareToGroup}</span>
                 </button>
               </div>
             </div>
@@ -573,17 +573,14 @@ export default function App() {
               <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 text-slate-300">
                   <CloudCheck className="h-4 w-4 text-amber-400 shrink-0" />
-                  <span>
-                    Masuk dengan <strong>Google Sign-In</strong> agar struk otomatis tersimpan di
-                    Cloud Firestore dan dapat dibuka kapan saja.
-                  </span>
+                  <span>{t.authPromptText}</span>
                 </div>
                 <button
                   onClick={() => signInWithGoogle()}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-3 py-1.5 font-semibold text-xs border border-amber-500/30 transition self-start sm:self-auto shrink-0"
                 >
                   <LogIn className="h-3.5 w-3.5" />
-                  <span>Masuk dengan Google</span>
+                  <span>{t.signInWithGoogle}</span>
                 </button>
               </div>
             )}
@@ -592,7 +589,7 @@ export default function App() {
           {isLoading ? (
             <div className="py-20 text-center space-y-3">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-              <p className="text-xs text-slate-400">Memuat rincian struk & status settlement...</p>
+              <p className="text-xs text-slate-400">{t.loadingReceiptDetails}</p>
             </div>
           ) : bill ? (
             <div className="space-y-6">
@@ -611,13 +608,13 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    <span>Rincian Pembagian per Orang</span>
+                    <span>{t.individualBreakdown}</span>
                     <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-amber-400">
-                      {bill.participants.length} Teman
+                      {t.friendsCountPill.replace("{count}", String(bill.participants.length))}
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Klik "Pay my share with USDT" untuk transaksi gasless langsung di BNB Chain
+                    {t.gaslessPayHint}
                   </p>
                 </div>
 
@@ -627,7 +624,7 @@ export default function App() {
                   className="text-xs font-semibold text-amber-400 hover:underline flex items-center gap-1"
                 >
                   <Sparkles className="h-3 w-3" />
-                  <span>AI Auto-Assign Chat</span>
+                  <span>{t.aiAutoAssignChat}</span>
                 </button>
               </div>
 
@@ -652,10 +649,9 @@ export default function App() {
                 <Camera className="h-6 w-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-white">Belum Ada Struk yang Dimuat</h3>
+                <h3 className="text-base font-bold text-white">{t.emptyNoReceiptTitle}</h3>
                 <p className="text-xs text-slate-400">
-                  Ambil foto struk restoran atau pilih contoh preset untuk melihat keajaiban
-                  ReceiptSplit.
+                  {t.emptyNoReceiptDesc}
                 </p>
               </div>
               <button
@@ -663,7 +659,7 @@ export default function App() {
                 className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 transition"
               >
                 <Plus className="h-4 w-4" />
-                <span>Mulai dengan Struk Baru</span>
+                <span>{t.startWithNewReceipt}</span>
               </button>
             </div>
           )}
@@ -678,7 +674,7 @@ export default function App() {
             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 py-2.5 text-xs font-bold text-slate-950 shadow-md"
           >
             <Camera className="h-4 w-4" />
-            <span>Snap Struk</span>
+            <span>{t.snapReceipt}</span>
           </button>
 
           <button
@@ -686,7 +682,7 @@ export default function App() {
             className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-slate-200"
           >
             <History className="h-4 w-4 text-amber-400" />
-            <span>Riwayat</span>
+            <span>{t.historyBtn}</span>
           </button>
 
           <button
@@ -694,13 +690,13 @@ export default function App() {
             className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-slate-200"
           >
             <Sparkles className="h-4 w-4 text-amber-400" />
-            <span>Proof</span>
+            <span>{t.viewProof}</span>
           </button>
 
           <button
             onClick={() => setIsWalletModalOpen(true)}
             className="flex items-center justify-center rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-slate-200"
-            title="Buka Dompet"
+            title="Open Wallet"
           >
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
           </button>

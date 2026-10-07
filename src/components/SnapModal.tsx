@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, Upload, Sparkles, X, AlertCircle, FileText, Check, Coffee, Utensils, Flame } from "lucide-react";
 import { Bill } from "../types";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface SnapModalProps {
   isOpen: boolean;
@@ -8,37 +9,69 @@ interface SnapModalProps {
   onReceiptParsed: (billData: any) => void;
 }
 
-const PRESET_RECEIPTS = [
-  {
-    id: "kopi-kenangan",
-    title: "Kopi Kenangan Senopati",
-    category: "Coffee & Pastry",
-    icon: Coffee,
-    amount: "Rp 196.600 (~12.06 USDT)",
-    itemsCount: 5,
-    sampleChat: "Budi: Kopi Kenangan Mantan, Taufik: Kopi Kenangan Mantan, Siti: Matcha Espresso & Roll, Rian: Americano. Toast dimakan berempat!",
-  },
-  {
-    id: "sushi-tei",
-    title: "Sushi Tei Grand Indonesia",
-    category: "Japanese Dining",
-    icon: Utensils,
-    amount: "Rp 483.000 (~29.63 USDT)",
-    itemsCount: 5,
-    sampleChat: "Kevin & Adit: Salmon Sashimi berdua. Tuna roll bertiga Kevin Adit Nadia. Nadia: Bento. Adit: Ramen. Ocha bagi bertiga.",
-  },
-  {
-    id: "bebek-tepi-sawah",
-    title: "Bebek Bengil / Tepi Sawah",
-    category: "Indonesian Feast",
-    icon: Flame,
-    amount: "Rp 374.000 (~22.94 USDT)",
-    itemsCount: 4,
-    sampleChat: "Dimas & Rama: Bebek Goreng Crispy masing-masing 1. Sambal Mbe & Plecing Kangkung sharing berempat. Es Kelapa Muda Rama & Dimas.",
-  },
-];
+const PRESET_RECEIPTS_DATA = {
+  en: [
+    {
+      id: "kopi-kenangan",
+      title: "Kenangan Heritage Cafe",
+      category: "Coffee & Pastry",
+      icon: Coffee,
+      amount: "Rp 196,600 (~12.06 USDT)",
+      itemsCount: 5,
+      sampleChat: "Bob: Iced Latte, Alice: Iced Latte, Sarah: Matcha Roll & Espresso, Ryan: Cold Brew. Truffle Toast split among the 4 of us!",
+    },
+    {
+      id: "sushi-tei",
+      title: "Sushi Tei Japanese Dining",
+      category: "Japanese Dining",
+      icon: Utensils,
+      amount: "Rp 483,000 (~29.63 USDT)",
+      itemsCount: 5,
+      sampleChat: "Kevin & Alex: Salmon Sashimi together. Tuna roll split by Kevin Alex Nadia. Nadia: Bento. Alex: Ramen. Green tea refill split 3 ways.",
+    },
+    {
+      id: "bebek-tepi-sawah",
+      title: "Bebek Crispy Bali Diner",
+      category: "Southeast Asian Feast",
+      icon: Flame,
+      amount: "Rp 374,000 (~22.94 USDT)",
+      itemsCount: 4,
+      sampleChat: "David & Ryan: Crispy Duck 1 each. Sambal & Morning Glory shared 4 ways. Fresh Coconut for Ryan & David.",
+    },
+  ],
+  id: [
+    {
+      id: "kopi-kenangan",
+      title: "Kopi Kenangan Senopati",
+      category: "Coffee & Pastry",
+      icon: Coffee,
+      amount: "Rp 196.600 (~12.06 USDT)",
+      itemsCount: 5,
+      sampleChat: "Budi: Kopi Kenangan Mantan, Taufik: Kopi Kenangan Mantan, Siti: Matcha Espresso & Roll, Rian: Americano. Toast dimakan berempat!",
+    },
+    {
+      id: "sushi-tei",
+      title: "Sushi Tei Grand Indonesia",
+      category: "Japanese Dining",
+      icon: Utensils,
+      amount: "Rp 483.000 (~29.63 USDT)",
+      itemsCount: 5,
+      sampleChat: "Kevin & Adit: Salmon Sashimi berdua. Tuna roll bertiga Kevin Adit Nadia. Nadia: Bento. Adit: Ramen. Ocha bagi bertiga.",
+    },
+    {
+      id: "bebek-tepi-sawah",
+      title: "Bebek Bengil / Tepi Sawah",
+      category: "Indonesian Feast",
+      icon: Flame,
+      amount: "Rp 374.000 (~22.94 USDT)",
+      itemsCount: 4,
+      sampleChat: "Dimas & Rama: Bebek Goreng Crispy masing-masing 1. Sambal Mbe & Plecing Kangkung sharing berempat. Es Kelapa Muda Rama & Dimas.",
+    },
+  ],
+};
 
 export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceiptParsed }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<"camera" | "upload" | "presets">("presets");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [groupNotes, setGroupNotes] = useState<string>("");
@@ -49,6 +82,8 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const presets = PRESET_RECEIPTS_DATA[language] || PRESET_RECEIPTS_DATA.en;
 
   // Stop camera when closing or switching tabs
   const stopCamera = () => {
@@ -83,7 +118,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
       setCameraActive(true);
     } catch (err: any) {
       console.warn("Camera access failed:", err);
-      setCameraError("Kamera tidak dapat diakses di iFrame / izin ditolak. Silakan gunakan fitur Upload Gambar atau Preset Struk.");
+      setCameraError(t.cameraErrorMsg);
     }
   };
 
@@ -111,7 +146,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
     reader.readAsDataURL(file);
   };
 
-  const handleSelectPreset = (preset: typeof PRESET_RECEIPTS[0]) => {
+  const handleSelectPreset = (preset: (typeof presets)[0]) => {
     setGroupNotes(preset.sampleChat);
     // Draw synthetic realistic receipt onto imagePreview
     const canvas = document.createElement("canvas");
@@ -125,10 +160,10 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
       ctx.font = "bold 28px monospace";
       ctx.fillText(preset.title.toUpperCase(), 40, 80);
       ctx.font = "18px monospace";
-      ctx.fillText(`TANGGAL: ${new Date().toLocaleDateString("id-ID")}`, 40, 120);
+      ctx.fillText(`DATE: ${new Date().toLocaleDateString(language === "id" ? "id-ID" : "en-US")}`, 40, 120);
       ctx.fillText("---------------------------------------", 40, 150);
       ctx.font = "bold 20px monospace";
-      ctx.fillText("ITEMIZED BILL / STRUK KASIR", 40, 180);
+      ctx.fillText("ITEMIZED BILL / DINING RECEIPT", 40, 180);
       ctx.font = "18px monospace";
       ctx.fillText("---------------------------------------", 40, 210);
       ctx.fillText("1. Special Menu Set A           Rp 95.000", 40, 250);
@@ -140,10 +175,10 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
       ctx.fillText("SERVICE CHARGE (5%)             Rp  12.900", 40, 500);
       ctx.fillText("=======================================", 40, 540);
       ctx.font = "bold 22px monospace";
-      ctx.fillText(`TOTAL AKHIR: ${preset.amount}`, 40, 580);
+      ctx.fillText(`TOTAL: ${preset.amount}`, 40, 580);
       ctx.font = "14px monospace";
       ctx.fillText("PAYMENT METHOD: QRIS / CASH (HOST SETTLED)", 40, 630);
-      ctx.fillText("TERIMA KASIH ATAS KUNJUNGAN ANDA", 40, 680);
+      ctx.fillText(language === "id" ? "TERIMA KASIH ATAS KUNJUNGAN ANDA" : "THANK YOU FOR DINING WITH US", 40, 680);
       setImagePreview(canvas.toDataURL("image/jpeg"));
     }
   };
@@ -158,6 +193,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
           imageBase64: imagePreview,
           groupNotes,
           currency: "IDR",
+          lang: language,
         }),
       });
       const resData = await response.json();
@@ -168,11 +204,11 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
         });
         onClose();
       } else {
-        alert("Gagal memproses struk: " + (resData.warning || "Periksa gambar atau catatan"));
+        alert("Failed to process receipt: " + (resData.warning || "Check image or notes"));
       }
     } catch (err: any) {
       console.error("Error parsing receipt:", err);
-      alert("Terjadi kesalahan saat memproses dengan Gemini AI. Silakan coba lagi.");
+      alert(language === "id" ? "Terjadi kesalahan saat memproses dengan Gemini AI. Silakan coba lagi." : "An error occurred while processing with Gemini AI. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -190,8 +226,8 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
               <Camera className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Snap & Parse Struk (AI)</h3>
-              <p className="text-xs text-slate-400">Gemini 3.8 Flash membaca struk & chat grup otomatis</p>
+              <h3 className="font-semibold text-white">{t.snapAndParseReceiptAI}</h3>
+              <p className="text-xs text-slate-400">{t.snapModalSubtitle}</p>
             </div>
           </div>
           <button
@@ -215,7 +251,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                 activeTab === "presets" ? "bg-amber-500 text-slate-950 font-semibold shadow" : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Preset Populer
+              {t.popularPresets}
             </button>
             <button
               onClick={() => {
@@ -226,7 +262,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                 activeTab === "upload" ? "bg-amber-500 text-slate-950 font-semibold shadow" : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Upload Foto
+              {t.uploadPhoto}
             </button>
             <button
               onClick={() => {
@@ -237,16 +273,16 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                 activeTab === "camera" ? "bg-amber-500 text-slate-950 font-semibold shadow" : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Kamera Langsung
+              {t.liveCamera}
             </button>
           </div>
 
           {/* Presets Tab */}
           {activeTab === "presets" && (
             <div className="space-y-2">
-              <p className="text-xs text-slate-400">Pilih contoh struk restoran nyata untuk pengujian cepat:</p>
+              <p className="text-xs text-slate-400">{t.presetsInstruction}</p>
               <div className="grid gap-2">
-                {PRESET_RECEIPTS.map((preset) => {
+                {presets.map((preset) => {
                   const Icon = preset.icon;
                   return (
                     <div
@@ -264,13 +300,13 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                               {preset.title}
                             </div>
                             <div className="text-xs text-slate-400">
-                              {preset.category} • {preset.itemsCount} menu
+                              {preset.category} • {preset.itemsCount} {language === "id" ? "menu" : "items"}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
                           <span className="text-xs font-semibold text-amber-400">{preset.amount}</span>
-                          <span className="block text-[11px] text-slate-400">Klik untuk pakai</span>
+                          <span className="block text-[11px] text-slate-400">{t.clickToUse}</span>
                         </div>
                       </div>
                     </div>
@@ -288,8 +324,8 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                 className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-950/50 p-6 text-center hover:border-amber-500/50 transition cursor-pointer"
               >
                 <Upload className="h-8 w-8 text-amber-400 mb-2" />
-                <span className="text-sm font-medium text-slate-200">Klik untuk unggah foto struk</span>
-                <span className="text-xs text-slate-400 mt-1">Mendukung format JPG, PNG, atau WEBP</span>
+                <span className="text-sm font-medium text-slate-200">{t.clickToUpload}</span>
+                <span className="text-xs text-slate-400 mt-1">{t.uploadFormats}</span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -310,7 +346,9 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                   <div>
                     <p className="font-semibold">{cameraError}</p>
                     <p className="mt-1 text-slate-300">
-                      Anda tetap bisa menggunakan tab "Preset Populer" atau "Upload Foto" di atas.
+                      {language === "id"
+                        ? "Anda tetap bisa menggunakan tab 'Preset Populer' atau 'Upload Foto' di atas."
+                        : "You can still use the 'Popular Presets' or 'Upload Photo' tab above."}
                     </p>
                   </div>
                 </div>
@@ -323,7 +361,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                       className="flex items-center gap-2 rounded-full bg-amber-500 px-5 py-2 text-xs font-bold text-slate-950 shadow-lg hover:bg-amber-400 active:scale-95 transition"
                     >
                       <Camera className="h-4 w-4" />
-                      Ambil Foto Struk
+                      {t.captureReceiptPhoto}
                     </button>
                   </div>
                 </div>
@@ -335,11 +373,11 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
           {imagePreview && (
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={imagePreview} alt="Struk Preview" className="h-14 w-12 object-cover rounded border border-slate-700" />
+                <img src={imagePreview} alt="Receipt Preview" className="h-14 w-12 object-cover rounded border border-slate-700" />
                 <div>
-                  <span className="text-xs font-medium text-slate-200 block">Foto Struk Siap Dianalisis</span>
+                  <span className="text-xs font-medium text-slate-200 block">{t.receiptPhotoReady}</span>
                   <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-                    <Check className="h-3 w-3" /> Berhasil dimuat
+                    <Check className="h-3 w-3" /> {t.successfullyLoaded}
                   </span>
                 </div>
               </div>
@@ -347,7 +385,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
                 onClick={() => setImagePreview(null)}
                 className="text-xs text-slate-400 hover:text-red-400"
               >
-                Ganti Foto
+                {t.changePhoto}
               </button>
             </div>
           )}
@@ -356,17 +394,17 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
           <div className="space-y-1.5 pt-2 border-t border-slate-800">
             <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
               <FileText className="h-3.5 w-3.5 text-amber-400" />
-              Catatan Chat Grup / Siapa Makan Apa (Opsional)
+              {t.groupChatNotesLabel}
             </label>
             <p className="text-[11px] text-slate-400">
-              Bisa paste chat WhatsApp / Telegram, AI akan otomatis memecah item ke masing-masing orang:
+              {t.groupChatNotesDesc}
             </p>
             <textarea
               id="input-group-notes"
               rows={3}
               value={groupNotes}
               onChange={(e) => setGroupNotes(e.target.value)}
-              placeholder="Contoh: Budi makan nasi goreng, Siti es teh + dimsum berdua sama Budi, sisanya biaya servis dan tax dibagi rata..."
+              placeholder={t.groupChatNotesPlaceholder}
               className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
             />
           </div>
@@ -378,7 +416,7 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
             onClick={onClose}
             className="rounded-xl px-4 py-2 text-xs font-medium text-slate-400 hover:text-white"
           >
-            Batal
+            {t.cancel}
           </button>
 
           <button
@@ -390,12 +428,12 @@ export const SnapModal: React.FC<SnapModalProps> = ({ isOpen, onClose, onReceipt
             {isLoading ? (
               <>
                 <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
-                <span>Gemini AI Sedang Parsing...</span>
+                <span>{t.geminiAiParsing}</span>
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                <span>Parse dengan Gemini AI</span>
+                <span>{t.parseWithGeminiAI}</span>
               </>
             )}
           </button>

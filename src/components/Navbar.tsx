@@ -10,10 +10,12 @@ import {
   User as UserIcon,
   CloudCheck,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 import { SmartWalletInfo } from "../types";
 import { truncateAddress } from "../utils/formatters";
 import { useAuth } from "../firebase/authContext";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface NavbarProps {
   smartWallet: SmartWalletInfo;
@@ -35,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   savedBillsCount,
 }) => {
   const { currentUser, loading, signInWithGoogle, signOutUser } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -62,26 +65,58 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-lg font-bold tracking-tight text-white">ReceiptSplit</span>
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-400 border border-amber-500/20">
                 <Sparkles className="h-3 w-3" />
-                BNB Chain
+                BSC Testnet
               </span>
             </div>
             <p className="hidden text-xs text-slate-400 sm:block">
-              AI Bill Splitter • Firebase Backend • Zero-Gas Account Abstraction
+              {t.navSubtitle}
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Riwayat Struk (Firestore) Button */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Language Toggle (EN / ID) */}
+          <div
+            id="lang-toggle-container"
+            className="flex items-center rounded-lg border border-slate-800 bg-slate-900 p-0.5"
+            title="Switch Language / Ganti Bahasa"
+          >
+            <button
+              id="lang-btn-en"
+              type="button"
+              onClick={() => setLanguage("en")}
+              className={`rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                language === "en"
+                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              EN
+            </button>
+            <button
+              id="lang-btn-id"
+              type="button"
+              onClick={() => setLanguage("id")}
+              className={`rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                language === "id"
+                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              ID
+            </button>
+          </div>
+
+          {/* History Button (Firestore) */}
           <button
             id="btn-nav-history"
             onClick={onOpenHistoryModal}
             className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:border-slate-700 hover:bg-slate-800 transition"
-            title="Buka Riwayat Struk dari Cloud Firestore"
+            title={t.historyBtnTitle}
           >
             <History className="h-3.5 w-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Riwayat</span>
+            <span className="hidden sm:inline">{t.historyBtn}</span>
             {savedBillsCount > 0 && (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500/20 px-1 text-[10px] font-bold text-amber-300 border border-amber-500/30">
                 {savedBillsCount}
@@ -101,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Toggle Telegram Mini App Frame Preview"
           >
             <Smartphone className="h-3.5 w-3.5" />
-            <span>{isTelegramView ? "Telegram Frame: ON" : "Telegram Frame"}</span>
+            <span>{isTelegramView ? t.telegramFrameOn : t.telegramFrameOff}</span>
           </button>
 
           {/* New Receipt Action */}
@@ -111,7 +146,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 px-3 py-1.5 text-xs font-semibold text-slate-950 shadow-sm transition hover:from-amber-400 hover:to-yellow-400 active:scale-95"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Snap Struk</span>
+            <span>{t.snapReceipt}</span>
           </button>
 
           {/* Smart Account / Wallet pill */}
@@ -132,7 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <ShieldCheck className="h-3 w-3 text-emerald-400" />
               </div>
               <span className="text-[10px] text-slate-400">
-                {smartWallet.usdtBalance.toFixed(1)} USDT • 0 BNB Gas
+                {smartWallet.usdtBalance.toFixed(1)} {t.usdtZeroGas}
               </span>
             </div>
           </button>
@@ -168,12 +203,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-800 bg-slate-900 p-2 shadow-xl z-50">
                   <div className="border-b border-slate-800 px-3 py-2">
                     <p className="text-xs font-semibold text-white truncate">
-                      {currentUser.displayName || "Pengguna Firebase"}
+                      {currentUser.displayName || t.firebaseUser}
                     </p>
                     <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
                     <div className="mt-1 flex items-center gap-1 text-[10px] text-emerald-400">
                       <CloudCheck className="h-3 w-3" />
-                      <span>Cloud Firestore Aktif</span>
+                      <span>{t.cloudFirestoreActive}</span>
                     </div>
                   </div>
                   <div className="pt-1">
@@ -185,7 +220,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800 transition"
                     >
                       <History className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Lihat Riwayat Struk ({savedBillsCount})</span>
+                      <span>{t.viewReceiptHistory} ({savedBillsCount})</span>
                     </button>
                     <button
                       onClick={() => {
@@ -195,7 +230,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 transition mt-1"
                     >
                       <LogOut className="h-3.5 w-3.5" />
-                      <span>Keluar (Logout)</span>
+                      <span>{t.signOut}</span>
                     </button>
                   </div>
                 </div>
@@ -207,7 +242,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={handleSignIn}
               disabled={isSigningIn}
               className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20 transition active:scale-95 shadow-sm"
-              title="Masuk dengan Google untuk menyimpan struk ke Cloud Firestore"
+              title={t.googleSignInTitle}
             >
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24">
                 <path
@@ -227,7 +262,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>{isSigningIn ? "Masuk..." : "Google Sign-In"}</span>
+              <span>{isSigningIn ? t.signingIn : t.googleSignIn}</span>
             </button>
           )}
         </div>

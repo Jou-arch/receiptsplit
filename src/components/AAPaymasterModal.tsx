@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { Zap, ShieldCheck, CheckCircle2, ArrowRight, ExternalLink, Sparkles, X, Award, Flame, AlertCircle } from "lucide-react";
+import { Zap, ShieldCheck, CheckCircle2, ArrowRight, ExternalLink, Sparkles, X, Award, Flame, AlertCircle, Copy, Check } from "lucide-react";
 import confetti from "canvas-confetti";
 import { BillParticipant, SettlementResult, SmartWalletInfo } from "../types";
 import { formatCurrency, formatUsdt, truncateAddress } from "../utils/formatters";
+import { BSC_TESTNET_CONFIG, getBscScanTxUrl, getBscScanAddressUrl, getBscScanTokenUrl } from "../constants/contracts";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface AAPaymasterModalProps {
   isOpen: boolean;
@@ -25,8 +27,9 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
   smartWallet,
   onPaymentSuccess,
 }) => {
+  const { t, language } = useLanguage();
   const [step, setStep] = useState<"review" | "processing" | "success">("review");
-  const [processStage, setProcessStage] = useState<string>("Inisialisasi UserOperation...");
+  const [processStage, setProcessStage] = useState<string>(t.wrappingUserOp);
   const [settlementResult, setSettlementResult] = useState<SettlementResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -38,11 +41,11 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
 
     try {
       // Step 1: UserOp preparation
-      setProcessStage("Membungkus UserOperation ERC-4337...");
+      setProcessStage(t.wrappingUserOp);
       await new Promise((r) => setTimeout(r, 600));
 
       // Step 2: Paymaster sponsorship
-      setProcessStage("Meminta sponsor gas ke ReceiptSplit Paymaster di BNB Chain...");
+      setProcessStage(t.requestingSponsorship);
       await new Promise((r) => setTimeout(r, 800));
 
       // Step 3: Call server API
@@ -57,16 +60,17 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
           amountUsdt: participant.totalUsdt,
           userSmartAccountAddress: smartWallet.address,
           paymasterMode: "ZERO_GAS_SPONSORED",
+          lang: language,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Gagal membundel transaksi UserOp");
+        throw new Error(data.error || "Failed to bundle UserOp transaction");
       }
 
-      setProcessStage("Mengonfirmasi settlement di Smart Contract BNB Chain...");
+      setProcessStage(t.confirmingSettlement);
       await new Promise((r) => setTimeout(r, 700));
 
       const result: SettlementResult = data.settlement;
@@ -84,7 +88,7 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
       onPaymentSuccess(participant.id, result);
     } catch (err: any) {
       console.error("Execution error:", err);
-      setErrorMsg(err.message || "Terjadi kesalahan saat memproses Paymaster.");
+      setErrorMsg(err.message || "An error occurred while processing Paymaster.");
       setStep("review");
     }
   };
@@ -104,8 +108,8 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               <Zap className="h-4 w-4 fill-amber-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">ERC-4337 Account Abstraction</h3>
-              <p className="text-xs text-slate-400">Zero-Gas Paymaster Settlement on BNB Chain</p>
+              <h3 className="font-semibold text-white">{t.aaModalTitle}</h3>
+              <p className="text-xs text-slate-400">{t.aaModalSubtitle}</p>
             </div>
           </div>
           {step !== "processing" && (
@@ -125,7 +129,7 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               {/* Participant & Amount Hero Card */}
               <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 p-4 sm:p-5 text-center">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Bayar Bagian: <strong className="text-amber-300">{participant.name}</strong>
+                  {t.payingShareFor} <strong className="text-amber-300">{participant.name}</strong>
                 </span>
                 <div className="mt-1 flex items-baseline justify-center gap-2">
                   <span className="font-mono text-3xl sm:text-4xl font-extrabold text-amber-400">
@@ -133,7 +137,7 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
                   </span>
                 </div>
                 <span className="text-xs text-slate-400 block mt-1">
-                  ≈ {formatCurrency(participant.totalFiat, currency)} (Kurs: 1 USDT = 16.300 IDR)
+                  ≈ {formatCurrency(participant.totalFiat, currency)} ({language === "id" ? "Kurs" : "Rate"}: 1 USDT = 16,300 IDR)
                 </span>
               </div>
 
@@ -141,33 +145,66 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2">
                 <div className="flex items-center gap-2 text-emerald-400 font-semibold text-xs sm:text-sm">
                   <ShieldCheck className="h-4 w-4 shrink-0" />
-                  <span>Sponsor Gas Fee Aktif: 0 BNB Dibutuhkan</span>
+                  <span>{t.activeGasSponsorship}</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Teman tidak perlu pusing beli BNB di exchange atau memahami gas fee.
-                  Transaksi ini dibungkus <strong>ERC-4337 UserOperation</strong> dan gas fee sebesar{" "}
-                  <span className="font-mono text-emerald-400">~0.00038 BNB ($0.23)</span> disubsidi langsung oleh{" "}
-                  <strong>ReceiptSplit Paymaster</strong>.
+                  {t.paymasterExplanation}
                 </p>
               </div>
 
-              {/* Transaction Specs */}
+              {/* Transaction & Contract Specs on BSC Testnet */}
               <div className="space-y-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 text-xs">
                 <div className="flex justify-between py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Smart Account Pengirim:</span>
+                  <span className="text-slate-400">{t.networkChainId}</span>
+                  <span className="font-semibold text-amber-300">BNB Smart Chain Testnet (97)</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-800/80">
+                  <span className="text-slate-400">{t.senderSmartAccount}</span>
                   <span className="font-mono text-slate-200">{truncateAddress(smartWallet.address, 6)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Penerima (Kasir / Host):</span>
+                  <span className="text-slate-400">{t.recipientHost}</span>
                   <span className="font-mono text-slate-200">{truncateAddress(hostAddress, 6)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Token & Jaringan:</span>
-                  <span className="font-semibold text-amber-300">USDT (BEP-20) • BNB Chain</span>
+                  <span className="text-slate-400">{t.tokenUsdtContract}</span>
+                  <a
+                    href={getBscScanTokenUrl(BSC_TESTNET_CONFIG.contracts.usdtToken)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>{truncateAddress(BSC_TESTNET_CONFIG.contracts.usdtToken, 6)}</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-800/80">
+                  <span className="text-slate-400">{t.settlementContract}</span>
+                  <a
+                    href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>{truncateAddress(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement, 6)}</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-800/80">
+                  <span className="text-slate-400">{t.paymasterContract}</span>
+                  <a
+                    href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.paymasterVault)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-slate-300 hover:underline flex items-center gap-1"
+                  >
+                    <span>{truncateAddress(BSC_TESTNET_CONFIG.contracts.paymasterVault, 6)}</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-slate-400">Saldo BNB Dibutuhkan:</span>
-                  <span className="font-bold text-emerald-400">0.00 BNB (GRATIS)</span>
+                  <span className="text-slate-400">{t.tBnbBalanceRequired}</span>
+                  <span className="font-bold text-emerald-400">{t.sponsoredForFree}</span>
                 </div>
               </div>
 
@@ -189,9 +226,9 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <h4 className="text-base font-bold text-white">Memproses Settle On-Chain</h4>
+                <h4 className="text-base font-bold text-white">{t.processingOnChain}</h4>
                 <p className="font-mono text-xs text-amber-400 animate-pulse">{processStage}</p>
-                <p className="text-xs text-slate-400">Membungkus UserOp ERC-4337 • Bundler BNB Chain</p>
+                <p className="text-xs text-slate-400">{t.bundlerSubtitle}</p>
               </div>
             </div>
           )}
@@ -203,40 +240,52 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <h4 className="text-xl font-bold text-white">Pembayaran Sukses & Lunas!</h4>
+                <h4 className="text-xl font-bold text-white">{t.paymentSuccessSettled}</h4>
                 <p className="text-xs text-slate-300">
-                  Bagian {participant.name} sebesar{" "}
-                  <strong className="text-amber-400">{formatUsdt(participant.totalUsdt)}</strong> telah tercatat di
-                  Smart Contract BNB Chain.
+                  {t.paymentSuccessDesc
+                    .replace("{name}", participant.name)
+                    .replace("{amount}", formatUsdt(participant.totalUsdt))}
                 </p>
               </div>
 
               {/* Awarded Badge */}
               <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-yellow-500/15 to-amber-500/10 p-4 text-center">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 block mb-1">
-                  Reputation Badge Earned 🎖️
+                  {t.reputationBadgeEarned}
                 </span>
                 <div className="flex items-center justify-center gap-2">
                   <Award className="h-5 w-5 text-amber-400" />
                   <span className="text-base font-extrabold text-white">{settlementResult.awardedBadge}</span>
                 </div>
                 <span className="text-[11px] text-slate-300 mt-1 block">
-                  +25 Reputasi Anti-Ghosting on BNB Chain
+                  {t.antiGhostingReputation}
                 </span>
               </div>
 
-              {/* BSCScan Tx link */}
-              <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs space-y-1 text-left">
+              {/* BSCScan Tx link & Contract Details */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs space-y-1.5 text-left">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Status Settlement:</span>
-                  <span className="font-bold text-emerald-400">VERIFIED ON-CHAIN</span>
+                  <span className="text-slate-400">{t.settlementStatus}</span>
+                  <span className="font-bold text-emerald-400">{t.verifiedOnChain}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Blok BNB Chain:</span>
+                  <span className="text-slate-400">{t.bscTestnetBlock}</span>
                   <span className="font-mono text-slate-300">#{settlementResult.blockNumber}</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">{t.smartContractLabel}</span>
+                  <a
+                    href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-amber-400 hover:underline flex items-center gap-1 text-[11px]"
+                  >
+                    {truncateAddress(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement, 6)}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
                 <div className="flex justify-between items-center pt-1 border-t border-slate-800">
-                  <span className="text-slate-400">Bukti TxHash:</span>
+                  <span className="text-slate-400">{t.txHashProof}</span>
                   <a
                     href={settlementResult.bscScanUrl}
                     target="_blank"
@@ -261,7 +310,7 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/25 hover:from-amber-400 hover:to-yellow-400 active:scale-95 transition"
             >
               <Zap className="h-4 w-4 fill-slate-950" />
-              <span>Konfirmasi Bayar {formatUsdt(participant.totalUsdt)} (0 BNB Gas)</span>
+              <span>{t.confirmPayAmount.replace("{amount}", formatUsdt(participant.totalUsdt))}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           )}
@@ -272,7 +321,7 @@ export const AAPaymasterModal: React.FC<AAPaymasterModalProps> = ({
               onClick={handleDone}
               className="w-full rounded-xl bg-slate-800 py-3 text-sm font-semibold text-white hover:bg-slate-700 active:scale-95 transition"
             >
-              Selesai & Tutup
+              {t.doneAndClose}
             </button>
           )}
         </div>

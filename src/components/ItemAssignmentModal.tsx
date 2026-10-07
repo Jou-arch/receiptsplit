@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Users, Sparkles, X, Plus, Trash2, Check, ArrowRight } from "lucide-react";
 import { BillItem } from "../types";
 import { formatCurrency } from "../utils/formatters";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface ItemAssignmentModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
   currentParticipants,
   onSaveAssignments,
 }) => {
+  const { t, language } = useLanguage();
   const [itemsState, setItemsState] = useState<BillItem[]>(items);
   const [participantsList, setParticipantsList] = useState<string[]>(currentParticipants);
   const [newPersonName, setNewPersonName] = useState<string>("");
@@ -39,7 +41,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
 
   const handleRemoveParticipant = (name: string) => {
     if (participantsList.length <= 1) {
-      alert("Minimal harus ada 1 peserta.");
+      alert(t.minParticipantAlert);
       return;
     }
     const filtered = participantsList.filter((p) => p !== name);
@@ -81,6 +83,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
           items: itemsState,
           chatText: aiChatPrompt,
           currentParticipants: participantsList,
+          lang: language,
         }),
       });
       const data = await res.json();
@@ -107,7 +110,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
             })
           );
         }
-        setAiReasoning(reasoning || "Item berhasil dipetakan otomatis sesuai chat grup!");
+        setAiReasoning(reasoning || (language === "id" ? "Item berhasil dipetakan otomatis sesuai chat grup!" : "Items successfully assigned according to group chat!"));
       }
     } catch (e) {
       console.error("AI assign error:", e);
@@ -131,8 +134,8 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
               <Users className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Atur Siapa Makan Apa</h3>
-              <p className="text-xs text-slate-400">Centang nama atau biarkan AI auto-assign dari pesan chat</p>
+              <h3 className="font-semibold text-white">{t.itemAssignmentTitle}</h3>
+              <p className="text-xs text-slate-400">{t.itemAssignmentSubtitle}</p>
             </div>
           </div>
           <button
@@ -148,7 +151,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
           {/* Participants chips editor */}
           <div className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-              Daftar Teman Nongkrong ({participantsList.length} Orang)
+              {t.groupFriendsCount.replace("{count}", String(participantsList.length))}
             </span>
             <div className="flex flex-wrap items-center gap-2">
               {participantsList.map((p) => (
@@ -160,7 +163,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
                   <button
                     onClick={() => handleRemoveParticipant(p)}
                     className="hover:text-red-400 ml-1"
-                    title={`Hapus ${p}`}
+                    title={`Remove ${p}`}
                   >
                     ×
                   </button>
@@ -174,7 +177,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
                   value={newPersonName}
                   onChange={(e) => setNewPersonName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddParticipant()}
-                  placeholder="+ Tambah teman"
+                  placeholder={t.addFriend}
                   className="rounded-full bg-slate-950 px-3 py-1 text-xs text-slate-200 border border-slate-800 focus:border-amber-500 focus:outline-none w-28"
                 />
                 <button
@@ -192,7 +195,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                AI Quick Auto-Assign (Chat Grup Parser)
+                {t.aiQuickAutoAssign}
               </span>
             </div>
             <div className="flex gap-2">
@@ -200,7 +203,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
                 type="text"
                 value={aiChatPrompt}
                 onChange={(e) => setAiChatPrompt(e.target.value)}
-                placeholder="Contoh: Budi makan Kopi Mantan + Toast, Siti Matcha, Dimsum berdua..."
+                placeholder={t.aiQuickPlaceholder}
                 className="flex-1 rounded-lg bg-slate-950 px-3 py-1.5 text-xs text-slate-200 border border-slate-700 focus:border-amber-500 focus:outline-none"
               />
               <button
@@ -208,7 +211,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
                 disabled={isAiAssigning || !aiChatPrompt.trim()}
                 className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-amber-400 disabled:opacity-50 transition"
               >
-                {isAiAssigning ? "Memproses..." : "Terapkan"}
+                {isAiAssigning ? t.processing : t.apply}
               </button>
             </div>
             {aiReasoning && (
@@ -219,7 +222,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
           {/* Items matrix */}
           <div className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-              Pilih Siapa yang Mengonsumsi Menu
+              {t.selectWhoConsumed}
             </span>
             <div className="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-slate-950">
               {itemsState.map((item) => (
@@ -232,11 +235,14 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-400">
-                      Porsi: {item.assignedTo.length || "0"} orang (
-                      {item.assignedTo.length > 0
-                        ? formatCurrency(item.totalPrice / item.assignedTo.length, currency) + "/orang"
-                        : "Belum dipilih"}
-                      )
+                      {t.portionsPerPerson
+                        .replace("{count}", String(item.assignedTo.length || 0))
+                        .replace(
+                          "{share}",
+                          item.assignedTo.length > 0
+                            ? formatCurrency(item.totalPrice / item.assignedTo.length, currency)
+                            : t.notSelected
+                        )}
                     </span>
                   </div>
 
@@ -273,7 +279,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
             onClick={onClose}
             className="rounded-xl px-4 py-2 text-xs font-medium text-slate-400 hover:text-white"
           >
-            Batal
+            {t.cancel}
           </button>
 
           <button
@@ -281,7 +287,7 @@ export const ItemAssignmentModal: React.FC<ItemAssignmentModalProps> = ({
             onClick={handleSave}
             className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-yellow-400 active:scale-95 transition"
           >
-            <span>Simpan & Hitung Ulang Proporsional</span>
+            <span>{t.saveAndRecalculate}</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>

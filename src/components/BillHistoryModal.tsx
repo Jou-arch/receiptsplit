@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Bill } from "../types";
 import { formatCurrency } from "../utils/formatters";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface BillHistoryModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
   onDeleteBill,
   isLoading,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -47,14 +49,14 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">Riwayat Struk & Tagihan</h3>
+                <h3 className="text-base font-bold text-white">{t.historyModalTitle}</h3>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
                   <CloudCheck className="h-3 w-3" />
                   Cloud Firestore
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Tersimpan aman di backend Firebase Firestore Anda
+                {t.historyModalSubtitle}
               </p>
             </div>
           </div>
@@ -71,7 +73,7 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
           {isLoading ? (
             <div className="py-16 text-center space-y-3">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
-              <p className="text-xs text-slate-400">Memuat riwayat dari Cloud Firestore...</p>
+              <p className="text-xs text-slate-400">{t.loadingHistoryFirestore}</p>
             </div>
           ) : savedBills.length === 0 ? (
             <div className="py-14 text-center space-y-3">
@@ -79,9 +81,9 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
                 <Receipt className="h-6 w-6" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-white">Belum Ada Struk Tersimpan</h4>
+                <h4 className="text-sm font-bold text-white">{t.noSavedReceiptsYet}</h4>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Struk yang Anda foto atau simpan akan otomatis tersinkronisasi di Cloud Firestore dan muncul di sini.
+                  {t.noSavedReceiptsDesc}
                 </p>
               </div>
             </div>
@@ -110,11 +112,11 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
                           </h4>
                           {isCurrent && (
                             <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/30">
-                              Aktif Sekarang
+                              {t.currentlyActive}
                             </span>
                           )}
                           <span className="text-[11px] text-slate-400">
-                            {b.date || "Tanpa tanggal"}
+                            {b.date || t.noDate}
                           </span>
                         </div>
 
@@ -128,7 +130,9 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
                           </span>
                           <span className="text-slate-400">•</span>
                           <span className="text-slate-400">
-                            {b.items.length} item • {b.participants.length} teman
+                            {t.itemsAndFriendsCount
+                              .replace("{items}", String(b.items.length))
+                              .replace("{friends}", String(b.participants.length))}
                           </span>
                         </div>
 
@@ -141,7 +145,10 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
                             />
                           </div>
                           <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">
-                            {paidCount}/{totalParticipants} Lunas ({settledPercent}%)
+                            {t.settledRatio
+                              .replace("{paid}", String(paidCount))
+                              .replace("{total}", String(totalParticipants))
+                              .replace("{percent}", String(settledPercent))}
                           </span>
                         </div>
                       </div>
@@ -160,18 +167,18 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
                               : "bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-sm"
                           }`}
                         >
-                          <span>{isCurrent ? "Sedang Dibuka" : "Buka Struk"}</span>
+                          <span>{isCurrent ? t.currentlyOpen : t.openReceipt}</span>
                           {!isCurrent && <ChevronRight className="h-3.5 w-3.5" />}
                         </button>
 
                         <button
                           onClick={() => {
-                            if (confirm(`Hapus struk "${b.merchantName}" dari Cloud Firestore?`)) {
+                            if (confirm(t.confirmDeletePrompt.replace("{name}", b.merchantName))) {
                               onDeleteBill(b.id);
                             }
                           }}
                           className="rounded-lg p-2 text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition"
-                          title="Hapus dari Cloud Firestore"
+                          title={t.deleteFromFirestore}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -188,10 +195,10 @@ export const BillHistoryModal: React.FC<BillHistoryModalProps> = ({
         <div className="border-t border-slate-800 bg-slate-950/60 px-5 py-3 flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <span>Tersinkronisasi dengan Firebase Rules (ABAC Secured)</span>
+            <span>{t.abacSecuredFooter}</span>
           </div>
           <span className="text-[11px] text-slate-500 font-mono">
-            {savedBills.length} Tersimpan
+            {t.savedCount.replace("{count}", String(savedBills.length))}
           </span>
         </div>
       </div>

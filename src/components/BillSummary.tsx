@@ -13,9 +13,12 @@ import {
   ShieldCheck,
   CloudCheck,
   CloudUpload,
+  ExternalLink,
 } from "lucide-react";
 import { Bill } from "../types";
 import { formatCurrency, formatUsdt, truncateAddress } from "../utils/formatters";
+import { BSC_TESTNET_CONFIG, getBscScanAddressUrl } from "../constants/contracts";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface BillSummaryProps {
   bill: Bill;
@@ -36,6 +39,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
   isSaving = false,
   onSaveToFirestore,
 }) => {
+  const { t } = useLanguage();
   const [showItemDetails, setShowItemDetails] = useState<boolean>(true);
   const [copiedHostAddress, setCopiedHostAddress] = useState<boolean>(false);
   const [editingRate, setEditingRate] = useState<boolean>(false);
@@ -71,7 +75,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400 border border-amber-500/20">
                 <Store className="h-3 w-3" />
-                Restoran / Struk
+                {t.diningReceipt}
               </span>
               <span className="text-xs text-slate-400 flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
@@ -82,7 +86,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
               {isSavedInFirestore ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
                   <CloudCheck className="h-3 w-3" />
-                  Firestore Sync
+                  {t.firestoreSync}
                 </span>
               ) : onSaveToFirestore ? (
                 <button
@@ -91,7 +95,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
                   className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 hover:bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-400 border border-sky-500/20 transition cursor-pointer"
                 >
                   <CloudUpload className="h-3 w-3" />
-                  <span>{isSaving ? "Menyimpan..." : "Simpan ke Firestore"}</span>
+                  <span>{isSaving ? t.saving : t.saveToFirestore}</span>
                 </button>
               ) : null}
             </div>
@@ -99,12 +103,12 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
               {bill.merchantName}
             </h1>
             <p className="text-xs text-slate-400">
-              Kasir/QRIS ditalangi oleh:{" "}
+              {t.paidUpfrontBy}:{" "}
               <strong className="text-slate-200">{bill.payerName}</strong> (
               <button
                 onClick={handleCopyHost}
                 className="font-mono text-amber-400 hover:underline inline-flex items-center gap-1"
-                title="Salin alamat dompet host BNB Chain"
+                title={t.copyHostWallet}
               >
                 {truncateAddress(bill.payerAddress)}
                 {copiedHostAddress ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
@@ -134,7 +138,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
                   ) : (
                     <CloudUpload className="h-3.5 w-3.5 text-amber-400" />
                   )}
-                  <span>{isSaving ? "Menyimpan..." : isSavedInFirestore ? "Tersimpan di Cloud" : "Simpan Cloud"}</span>
+                  <span>{isSaving ? t.saving : isSavedInFirestore ? t.savedToCloud : t.saveCloud}</span>
                 </button>
               )}
 
@@ -144,12 +148,24 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
                 className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20 active:scale-95"
               >
                 <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span>Lihat Proof</span>
+                <span>{t.viewProof}</span>
               </button>
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              <span>On-Chain Settlement: <strong>BNB Chain (BSC)</strong></span>
+              <span>
+                {t.onChainSettlement}{" "}
+                <a
+                  href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-amber-400 hover:underline inline-flex items-center gap-1"
+                  title="View Smart Contract on BscScan Testnet"
+                >
+                  <span>BSC Testnet (97)</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </span>
             </div>
           </div>
         </div>
@@ -158,8 +174,11 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
         <div className="mt-5 space-y-1.5">
           <div className="flex justify-between text-xs">
             <span className="font-medium text-slate-300">
-              Status Patungan On-Chain:{" "}
-              <strong className="text-emerald-400">{paidCount} dari {totalCount} Lunas</strong> ({progressPercent}%)
+              {t.onChainStatus}{" "}
+              <strong className="text-emerald-400">
+                {t.settledOutOf.replace("{paid}", String(paidCount)).replace("{total}", String(totalCount))}
+              </strong>{" "}
+              ({progressPercent}%)
             </span>
             <span className="font-mono text-slate-400">
               {collectedUsdt.toFixed(2)} / {(bill.grandTotal / bill.exchangeRate).toFixed(2)} USDT
@@ -177,22 +196,22 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
       {/* Financial Numbers & Exchange Rate Bar */}
       <div className="grid grid-cols-2 gap-3 border-b border-slate-800 bg-slate-950/60 p-4 sm:grid-cols-4 sm:p-5">
         <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-3">
-          <span className="text-[11px] font-medium text-slate-400 block">Subtotal Menu</span>
+          <span className="text-[11px] font-medium text-slate-400 block">{t.subtotalMenu}</span>
           <span className="text-sm sm:text-base font-bold text-slate-200">
             {formatCurrency(bill.subtotal, bill.currency)}
           </span>
         </div>
 
         <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-3">
-          <span className="text-[11px] font-medium text-slate-400 block">PB1 Tax & Service</span>
+          <span className="text-[11px] font-medium text-slate-400 block">{t.taxService}</span>
           <span className="text-sm sm:text-base font-bold text-slate-200">
             {formatCurrency((bill.tax || 0) + (bill.serviceCharge || 0), bill.currency)}
           </span>
-          <span className="text-[10px] text-slate-500 block">Dibagi proporsional</span>
+          <span className="text-[10px] text-slate-500 block">{t.splitProportionally}</span>
         </div>
 
         <div className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-3">
-          <span className="text-[11px] font-medium text-slate-400 block">Kurs USDT / IDR</span>
+          <span className="text-[11px] font-medium text-slate-400 block">{t.exchangeRateRate}</span>
           {editingRate ? (
             <div className="flex items-center gap-1 mt-1">
               <input
@@ -216,7 +235,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
               <button
                 onClick={() => setEditingRate(true)}
                 className="text-[10px] text-slate-400 hover:text-amber-300"
-                title="Sesuaikan Kurs"
+                title={t.adjustRate}
               >
                 ✏️
               </button>
@@ -225,7 +244,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
         </div>
 
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
-          <span className="text-[11px] font-semibold text-amber-300 block">Grand Total Bill</span>
+          <span className="text-[11px] font-semibold text-amber-300 block">{t.grandTotalBill}</span>
           <span className="text-base sm:text-lg font-extrabold text-amber-400 block">
             {formatCurrency(bill.grandTotal, bill.currency)}
           </span>
@@ -240,14 +259,14 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Rincian Item ({bill.items.length} Menu)
+              {t.itemBreakdown.replace("{count}", String(bill.items.length))}
             </span>
             <button
               onClick={() => setShowItemDetails(!showItemDetails)}
               className="text-xs text-amber-400 hover:underline flex items-center gap-1"
             >
               {showItemDetails ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {showItemDetails ? "Sembunyikan" : "Tampilkan"}
+              {showItemDetails ? t.hide : t.show}
             </button>
           </div>
 
@@ -257,7 +276,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
             className="flex items-center gap-1 text-xs font-semibold text-amber-400 hover:text-amber-300 transition"
           >
             <Users className="h-3.5 w-3.5" />
-            <span>Atur Ulang / AI Re-Assign</span>
+            <span>{t.reassignItemsAI}</span>
           </button>
         </div>
 
@@ -275,7 +294,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
                   </div>
                   {/* Assigned tags */}
                   <div className="flex flex-wrap items-center gap-1 pl-7">
-                    <span className="text-[10px] text-slate-400">Dimakan oleh:</span>
+                    <span className="text-[10px] text-slate-400">{t.consumedBy}</span>
                     {item.assignedTo && item.assignedTo.length > 0 ? (
                       item.assignedTo.map((person, pIdx) => (
                         <span
@@ -286,7 +305,7 @@ export const BillSummary: React.FC<BillSummaryProps> = ({
                         </span>
                       ))
                     ) : (
-                      <span className="text-[10px] text-slate-500 italic">Bagi rata semua</span>
+                      <span className="text-[10px] text-slate-500 italic">{t.splitEquallyAll}</span>
                     )}
                   </div>
                 </div>

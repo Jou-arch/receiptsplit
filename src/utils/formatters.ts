@@ -24,16 +24,18 @@ export function truncateAddress(address: string, chars: number = 4): string {
   return `${address.substring(0, chars + 2)}...${address.substring(address.length - chars)}`;
 }
 
-export function generateTelegramShareMessage(bill: any): string {
+export function generateTelegramShareMessage(bill: any, lang: "en" | "id" = "en"): string {
+  const isEn = lang === "en";
   const lines: string[] = [];
   lines.push(`🧾 *ReceiptSplit Bill Breakdown*`);
   lines.push(`📍 *${bill.merchantName}* (${bill.date})`);
   lines.push(`💵 Total: ${formatCurrency(bill.grandTotal, bill.currency)} (~${(bill.grandTotal / bill.exchangeRate).toFixed(2)} USDT)`);
-  lines.push(`⛓️ Network: *BNB Chain (Zero-Gas ERC-4337)*`);
+  lines.push(`⛓️ Network: *BSC Testnet (Chain ID 97 - Zero-Gas ERC-4337)*`);
+  lines.push(`📄 Contract: *0x33de6Adf9Ce0f4Ae96fB03e1AB6D16577c89A47F*`);
   lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
 
   bill.participants.forEach((p: any) => {
-    const statusIcon = p.isPaid ? "✅ LUNAS" : "⏳ BELUM";
+    const statusIcon = p.isPaid ? (isEn ? "✅ PAID" : "✅ LUNAS") : (isEn ? "⏳ UNPAID" : "⏳ BELUM");
     lines.push(`${statusIcon} *${p.name}*: ${formatCurrency(p.totalFiat, bill.currency)} (*${p.totalUsdt.toFixed(2)} USDT*)`);
     if (p.badge) {
       lines.push(`   └ 🎖️ ${p.badge}`);
@@ -42,6 +44,6 @@ export function generateTelegramShareMessage(bill: any): string {
 
   lines.push(`━━━━━━━━━━━━━━━━━━━━━`);
   lines.push(`💳 Host: ${bill.payerName} (${truncateAddress(bill.payerAddress)})`);
-  lines.push(`⚡ Pay gas-free with USDT on BNB Chain via ReceiptSplit`);
+  lines.push(isEn ? `⚡ Pay gas-free with USDT on BSC Testnet via ReceiptSplit` : `⚡ Bayar bebas gas fee dengan USDT di BSC Testnet via ReceiptSplit`);
   return lines.join("\n");
 }

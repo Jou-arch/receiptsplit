@@ -80,7 +80,7 @@ export function formatFirestoreReceipt(data: any): Bill {
     grandTotal: Number(data.grandTotal) || 0,
     payerName: data.payerName || "Host",
     payerAddress: data.payerAddress || "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    network: (data.network as any) || "BNB Chain (BSC)",
+    network: (data.network as any) || "BNB Testnet",
     items: Array.isArray(data.items) ? data.items : [],
     participants: Array.isArray(data.participants) ? data.participants : [],
     createdAt: createdAtStr,

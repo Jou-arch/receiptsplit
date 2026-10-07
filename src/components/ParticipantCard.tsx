@@ -2,6 +2,8 @@ import React from "react";
 import { CheckCircle2, Clock, Sparkles, QrCode, Copy, Check, ExternalLink, Zap, Shield, Award } from "lucide-react";
 import { BillParticipant } from "../types";
 import { formatCurrency, formatUsdt, truncateAddress } from "../utils/formatters";
+import { getBscScanTxUrl } from "../constants/contracts";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface ParticipantCardProps {
   participant: BillParticipant;
@@ -20,13 +22,16 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
   onPayGasless,
   onShowQR,
 }) => {
+  const { t, language } = useLanguage();
   const [copiedLink, setCopiedLink] = React.useState<boolean>(false);
 
   const handleCopyReminder = () => {
-    const text = `Halo ${participant.name}! Patungan makan di ReceiptSplit totalnya ${formatCurrency(
-      participant.totalFiat,
-      currency
-    )} atau setara ${formatUsdt(participant.totalUsdt)}.\nBisa bayar crypto bebas gas fee (0 BNB) di BNB Chain ke alamat host: ${hostAddress}`;
+    const text = t.reminderMessageTemplate
+      .replace("{name}", participant.name)
+      .replace("{fiat}", formatCurrency(participant.totalFiat, currency))
+      .replace("{usdt}", formatUsdt(participant.totalUsdt))
+      .replace("{address}", hostAddress);
+
     navigator.clipboard.writeText(text);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -78,8 +83,9 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
                 )}
               </div>
               <span className="text-xs text-slate-400">
-                Porsi Menu: {formatCurrency(participant.itemsShare, currency)} + Tax/Serv:{" "}
-                {formatCurrency(participant.taxAndServiceShare, currency)}
+                {t.menuPortion
+                  .replace("{item}", formatCurrency(participant.itemsShare, currency))
+                  .replace("{tax}", formatCurrency(participant.taxAndServiceShare, currency))}
               </span>
             </div>
           </div>
@@ -88,12 +94,12 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
           {participant.isPaid ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              LUNAS ON-CHAIN
+              {t.settledOnChain}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-400 border border-amber-500/20">
               <Clock className="h-3.5 w-3.5" />
-              BELUM BAYAR
+              {t.unpaid}
             </span>
           )}
         </div>
@@ -101,14 +107,14 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
         {/* Pricing Breakdown Box */}
         <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3.5 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium text-slate-400 block">Total Tagihan</span>
+            <span className="text-[11px] font-medium text-slate-400 block">{t.totalShare}</span>
             <span className="text-base sm:text-lg font-extrabold text-slate-100">
               {formatCurrency(participant.totalFiat, currency)}
             </span>
           </div>
 
           <div className="text-right">
-            <span className="text-[11px] font-medium text-slate-400 block">Bayar Crypto (USDT)</span>
+            <span className="text-[11px] font-medium text-slate-400 block">{t.payCryptoUsdt}</span>
             <span className="font-mono text-base sm:text-lg font-extrabold text-amber-400">
               {formatUsdt(participant.totalUsdt)}
             </span>
@@ -119,16 +125,18 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
         {participant.isPaid ? (
           <div className="space-y-2 pt-1 border-t border-slate-800/80">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Waktu Settle:</span>
+              <span>{t.settleTime}</span>
               <span className="text-slate-200">
-                {participant.paidAt ? new Date(participant.paidAt).toLocaleTimeString("id-ID") : "Baru saja"}
+                {participant.paidAt
+                  ? new Date(participant.paidAt).toLocaleTimeString(language === "id" ? "id-ID" : "en-US")
+                  : t.justNow}
               </span>
             </div>
             {participant.txHash && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Tx Hash (BSC):</span>
+                <span className="text-slate-400">{t.txHashBscTestnet}</span>
                 <a
-                  href={`https://bscscan.com/tx/${participant.txHash}`}
+                  href={getBscScanTxUrl(participant.txHash)}
                   target="_blank"
                   rel="noreferrer"
                   className="font-mono text-amber-400 hover:underline flex items-center gap-1 text-[11px]"
@@ -140,7 +148,7 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
             )}
             <div className="rounded-lg bg-emerald-950/30 p-2 text-center text-xs font-medium text-emerald-300 border border-emerald-500/20 flex items-center justify-center gap-1.5">
               <Shield className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Disponsori Paymaster ERC-4337 (0 Gas Fee Dibayar Teman)</span>
+              <span>{t.sponsoredPaymasterBadge}</span>
             </div>
           </div>
         ) : (
@@ -152,11 +160,11 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-950 shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-yellow-400 active:scale-95 transition"
             >
               <Zap className="h-4 w-4 fill-slate-950" />
-              <span>Pay my share with USDT</span>
-              <span className="rounded bg-slate-950/20 px-1.5 py-0.5 text-[10px] font-mono">0 BNB Gas</span>
+              <span>{t.payMyShareUsdt}</span>
+              <span className="rounded bg-slate-950/20 px-1.5 py-0.5 text-[10px] font-mono">{t.zeroBnbGas}</span>
             </button>
 
-            {/* Secondary actions: Instant QR Code & Copy WA reminder */}
+            {/* Secondary actions: Instant QR Code & Copy reminder */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 id={`btn-qr-${participant.id}`}
@@ -164,17 +172,17 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({
                 className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-750 transition"
               >
                 <QrCode className="h-3.5 w-3.5 text-amber-400" />
-                <span>QR Bayar Instan</span>
+                <span>{t.instantQrPay}</span>
               </button>
 
               <button
                 id={`btn-copy-reminder-${participant.id}`}
                 onClick={handleCopyReminder}
                 className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-750 transition"
-                title="Salin pesan pengingat tagihan ke WhatsApp/Telegram"
+                title="Copy bill reminder"
               >
                 {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
-                <span>{copiedLink ? "Disalin!" : "Bagikan Tagihan"}</span>
+                <span>{copiedLink ? t.copied : t.shareBill}</span>
               </button>
             </div>
           </div>

@@ -37,7 +37,7 @@ export interface Bill {
   grandTotal: number;
   payerName: string;
   payerAddress: string;
-  network: "BNB Chain (BSC)" | "BNB Testnet";
+  network: "BNB Testnet" | "BNB Chain (BSC)";
   participants: BillParticipant[];
   createdAt: string;
 }
@@ -47,6 +47,7 @@ export interface UserOpDetail {
   entryPoint: string;
   recipient: string;
   tokenContract: string;
+  settlementContract?: string;
   amount: number;
   nonce: number;
   paymasterAndData: string;
@@ -64,6 +65,7 @@ export interface SettlementResult {
   status: "PENDING" | "COMPLETED" | "FAILED";
   blockNumber: number;
   bscScanUrl: string;
+  contractAddress?: string;
   paidAt: string;
   awardedBadge: string;
   reputationScoreAdded: number;

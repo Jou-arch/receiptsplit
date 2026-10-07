@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Wallet, ShieldCheck, Zap, X, Check, Copy, ExternalLink, PlusCircle, Sparkles } from "lucide-react";
+import { Wallet, ShieldCheck, Zap, X, Check, Copy, ExternalLink, PlusCircle, Sparkles, Layers } from "lucide-react";
 import { SmartWalletInfo } from "../types";
 import { truncateAddress } from "../utils/formatters";
+import { BSC_TESTNET_CONFIG, getBscScanAddressUrl, getBscScanTokenUrl } from "../constants/contracts";
+import { useLanguage } from "../i18n/LanguageContext";
 
 interface SmartWalletModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
   onTopUpUsdt,
   onSwitchWalletType,
 }) => {
+  const { t } = useLanguage();
   const [copiedAddress, setCopiedAddress] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -38,8 +41,8 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
               <Wallet className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Dompet & Account Abstraction</h3>
-              <p className="text-xs text-slate-400">BNB Chain Smart Account (ERC-4337)</p>
+              <h3 className="font-semibold text-white">{t.walletModalTitle}</h3>
+              <p className="text-xs text-slate-400">{t.walletModalSubtitle}</p>
             </div>
           </div>
           <button
@@ -62,7 +65,7 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Smart Account (Gasless)
+              {t.smartAccountGasless}
             </button>
             <button
               onClick={() => onSwitchWalletType("EOA (MetaMask / Trust)")}
@@ -72,37 +75,49 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              MetaMask / Trust Wallet
+              {t.metamaskTrust}
             </button>
           </div>
 
           {/* Address Box */}
           <div className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400">Alamat Smart Account (BSC):</span>
+              <span className="text-[11px] font-medium text-slate-400">{t.smartAccountAddressBsc}</span>
               <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
                 <ShieldCheck className="h-3 w-3" />
-                Verified
+                {t.verified}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="font-mono text-xs text-amber-300 font-semibold">
                 {truncateAddress(smartWallet.address, 8)}
               </span>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-amber-400 transition"
-              >
-                {copiedAddress ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                <span>{copiedAddress ? "Tersalin" : "Salin"}</span>
-              </button>
+              <div className="flex items-center gap-2.5">
+                <a
+                  href={getBscScanAddressUrl(smartWallet.address)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-xs text-amber-400 hover:underline"
+                  title="View on BscScan Testnet"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>BscScan</span>
+                </a>
+                <button
+                  onClick={handleCopy}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-amber-400 transition"
+                >
+                  {copiedAddress ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copiedAddress ? t.tersalin : t.salin}</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Balance Cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
-              <span className="text-[11px] text-slate-400 block">Saldo USDT</span>
+              <span className="text-[11px] text-slate-400 block">{t.saldoUsdt}</span>
               <span className="font-mono text-lg font-bold text-slate-100 block mt-0.5">
                 {smartWallet.usdtBalance.toFixed(2)} USDT
               </span>
@@ -111,18 +126,103 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
                 className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-amber-400 hover:underline"
               >
                 <PlusCircle className="h-3 w-3" />
-                <span>+ Faucet 50 USDT</span>
+                <span>{t.faucet50Usdt}</span>
               </button>
             </div>
 
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3">
-              <span className="text-[11px] text-emerald-300 block">Saldo BNB Gas</span>
+              <span className="text-[11px] text-emerald-300 block">{t.saldoTBnbGas}</span>
               <span className="font-mono text-lg font-bold text-emerald-400 block mt-0.5">
-                {smartWallet.bnbBalance.toFixed(4)} BNB
+                {smartWallet.bnbBalance.toFixed(4)} tBNB
               </span>
               <span className="text-[10px] text-slate-400 block mt-1">
-                Gas ditanggung Paymaster (0 BNB OK)
+                {t.gasPaidByPaymaster}
               </span>
+            </div>
+          </div>
+
+          {/* BSC Testnet Contracts Directory */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                <Layers className="h-3.5 w-3.5" />
+                <span>{t.smartContractsDirectory}</span>
+              </div>
+              <span className="text-[10px] text-emerald-400 font-mono">{t.chapelTestnet}</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">USDT (BEP-20):</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] text-slate-200">
+                    {truncateAddress(BSC_TESTNET_CONFIG.contracts.usdtToken, 6)}
+                  </span>
+                  <a
+                    href={getBscScanTokenUrl(BSC_TESTNET_CONFIG.contracts.usdtToken)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-400 hover:text-amber-300"
+                    title="Open on BscScan Testnet"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">ReceiptSplit Settlement:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] text-slate-200">
+                    {truncateAddress(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement, 6)}
+                  </span>
+                  <a
+                    href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.receiptSplitSettlement)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-400 hover:text-amber-300"
+                    title="Open on BscScan Testnet"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">Paymaster Vault:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] text-slate-200">
+                    {truncateAddress(BSC_TESTNET_CONFIG.contracts.paymasterVault, 6)}
+                  </span>
+                  <a
+                    href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.paymasterVault)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-400 hover:text-amber-300"
+                    title="Open on BscScan Testnet"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[11px]">EntryPoint ERC-4337:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[11px] text-slate-200">
+                    {truncateAddress(BSC_TESTNET_CONFIG.contracts.entryPoint, 6)}
+                  </span>
+                  <a
+                    href={getBscScanAddressUrl(BSC_TESTNET_CONFIG.contracts.entryPoint)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-400 hover:text-amber-300"
+                    title="Open on BscScan Testnet"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -130,11 +230,10 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 space-y-1.5 text-xs text-slate-300">
             <div className="flex items-center gap-1.5 font-bold text-amber-300">
               <Zap className="h-3.5 w-3.5 fill-amber-300" />
-              <span>Mengapa Zero-Gas Paymaster Penting?</span>
+              <span>{t.whyZeroGasImportant}</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Biasanya saat teman diminta bayar crypto, mereka bingung harus punya koin BNB untuk bayar gas fee.
-              Dengan <strong>ERC-4337 Account Abstraction di BNB Chain</strong>, transaksi dibungkus UserOp sehingga teman bisa langsung bayar USDT tanpa perlu menyimpan saldo BNB sama sekali!
+              {t.whyZeroGasAnswer}
             </p>
           </div>
         </div>
@@ -145,7 +244,7 @@ export const SmartWalletModal: React.FC<SmartWalletModalProps> = ({
             onClick={onClose}
             className="rounded-xl bg-slate-800 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-700 transition"
           >
-            Tutup
+            {t.close}
           </button>
         </div>
       </div>
