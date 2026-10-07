@@ -8,7 +8,7 @@ Built for **Indonesia Web3 Hackathon 2026** · Consumer Apps Track · Team **Tov
 
 🔗 **Live app:** https://receiptsplit-1.ai.studio
 
-🎥 **Demo video:** https://www.youtube.com/watch?v=ecgzlTAKABk
+🎥 **Demo video:** https://www.youtube.com/watch?v=xq9h_xqhLU8
 
 ---
 
