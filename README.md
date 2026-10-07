@@ -6,7 +6,8 @@ ReceiptSplit is a consumer Web3 app that makes splitting everyday bills easy (ea
 
 Built for **Indonesia Web3 Hackathon 2026** · Consumer Apps Track · Team **Tovix**
 
-🔗 **Live app:** https://receiptsplit-847550589589.asia-southeast1.run.app
+🔗 **Live app:** https://receiptsplit-1.ai.studio
+
 🎥 **Demo video:** https://www.youtube.com/watch?v=ecgzlTAKABk
 
 ---
@@ -59,6 +60,19 @@ F --> G[Status Check: Paid / Unpaid]
 - Address: [`0xFbCA570f9AC782D54EFef73E7641FCbC40cA9105`](https://testnet.bscscan.com/address/0xFbCA570f9AC782D54EFef73E7641FCbC40cA9105#code)
 - Source: [`contracts/Tovix.sol`](contracts/Tovix.sol)
 - Verified on BscScan ✅
+
+---
+
+## How to Try (for Judges)
+
+No installation needed. Just open the live app:
+
+1. Open **https://receiptsplit-1.ai.studio** (use the **EN / ID** toggle in the header to switch language)
+2. Click **Sign in with Google** so your receipts are saved to Cloud Firestore
+3. Click **Snap New Receipt (AI)** and upload any restaurant receipt photo
+4. Review the AI-parsed items, then assign who ordered what
+5. Click **Pay my share with USDT**: gas is sponsored by the ERC-4337 Paymaster (0 BNB needed)
+6. Click **View Proof** to check the settlement transaction on BscScan
 
 ---
 
