@@ -76,6 +76,41 @@ No installation needed. Just open the live app:
 
 ---
 
+## Business Model
+
+ReceiptSplit is **free for everyday users**. Revenue comes from the value we create at settlement and from partners who benefit from smoother group payments.
+
+| Revenue stream | How it works |
+|---|---|
+| **Settlement fee** | A small fee (target: 0.5%, capped) on each crypto settlement. It also funds the Paymaster that sponsors users' gas. |
+| **Merchant integration** | Restaurants and cafes show a "Split with ReceiptSplit" QR at the cashier. Merchants pay a monthly plan for faster table turnover and fewer split-bill disputes. |
+| **Premium groups** | Recurring splits (rent, subscriptions, trips), shared group history, and export for power users and communities. |
+
+**Gas sustainability:** Paymaster costs on BNB Chain are low per transaction and are covered by the settlement fee, so gasless UX stays sustainable as volume grows.
+
+---
+
+## Roadmap
+
+| Phase | Timeline | Milestones |
+|---|---|---|
+| **MVP** ✅ | Q4 2026 | AI receipt parsing (Gemini Vision), proportional split, ERC-4337 gasless payment on BSC Testnet, Firestore sync, EN/ID UI |
+| **Mainnet** | Q1 2027 | BNB Chain mainnet launch with production Paymaster and real USDT, dedicated settlement contract, smart contract audit |
+| **Social** | Q2 2027 | Telegram bot & Mini App that reads the group chat to auto-assign items, local fiat on/off-ramp partner |
+| **Merchants** | Q3 2027 | Cashier QR integration for cafes and restaurants, multi-restaurant split history, recurring splits |
+| **Expansion** | Q4 2027 | Expand to other Southeast Asian markets with a strong split-bill culture |
+
+---
+
+## Go-to-Market & Fundraising
+
+- **Go-to-market:** start where splitting happens daily: students, young professionals, and hangout communities in Indonesia, then onboard partner cafes as distribution channels.
+- **Funding path:** BNB Chain ecosystem grants and accelerator programs first, then a **pre-seed round** with Web3-focused VCs and angels after mainnet traction.
+- **Use of funds:** smart contract audit, Paymaster gas reserve, Telegram integration, and merchant partnerships.
+- **Key metrics:** monthly active groups, settlement volume (USDT), repeat-split rate, and number of partner merchants.
+
+---
+
 ## Run Locally
 
 **Prerequisites:** [Bun](https://bun.sh) and a Gemini API key
