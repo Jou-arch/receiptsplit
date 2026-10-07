@@ -1,0 +1,11 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Tovix Docs
+  structure:
+    - type: space
+      key: receiptsplit
+      title: ReceiptSplit
+      path: docs
+      default: true
+      content:
+        directory: ./docs
