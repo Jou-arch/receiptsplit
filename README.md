@@ -10,6 +10,8 @@ Built for **Indonesia Web3 Hackathon 2026** · Consumer Apps Track · Team **Tov
 
 🎥 **Demo video:** https://www.youtube.com/watch?v=xq9h_xqhLU8
 
+📚 **Docs:** <https://tovix-1.gitbook.io/tovix-docs/>
+
 ---
 
 ## The Problem
